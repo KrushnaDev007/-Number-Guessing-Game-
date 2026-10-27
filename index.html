@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Number Guessing Game</title>
+<style>
+:root{--bg:#fff;--card:#fff;--ink:#111;--mute:#555;--line:#e3e3e8;--tile:#f1f1f6;--acc:#6a1bff;--code:#14122b;--codeink:#ece9ff;--hl:#ffd84d;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15131f;--card:#1e1b2e;--ink:#f4f2ff;--mute:#b0abd0;--line:#363253;--tile:#2a2640;--code:#0a0916}}
+:root[data-theme="dark"]{--bg:#15131f;--card:#1e1b2e;--ink:#f4f2ff;--mute:#b0abd0;--line:#363253;--tile:#2a2640;--code:#0a0916}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,"Segoe UI",system-ui,sans-serif;min-height:100vh}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:60}
+.wrap{max-width:1000px;margin:0 auto;padding:14px 14px 40px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);gap:16px;align-items:start}
+@media(max-width:780px){.grid{grid-template-columns:1fr}}
+.stage{position:relative;width:100%;max-width:460px;aspect-ratio:1;margin:0 auto;overflow:hidden;background:var(--bg);border:1px solid var(--line);border-radius:12px}
+.n{position:absolute;font-weight:700;line-height:1;white-space:nowrap;animation:bob 4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-7px)}}
+#q{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:min(62vw,280px);font-weight:900;line-height:1;color:var(--ink);transition:transform .3s}
+#q.shake{animation:sh .45s}
+#q.pop{animation:pop .7s}
+@keyframes sh{20%{transform:translate(-60%,-50%) rotate(-6deg)}40%{transform:translate(-40%,-50%) rotate(6deg)}60%{transform:translate(-56%,-50%)}80%{transform:translate(-44%,-50%)}}
+@keyframes pop{0%{transform:translate(-50%,-50%) scale(.3)}60%{transform:translate(-50%,-50%) scale(1.2)}100%{transform:translate(-50%,-50%) scale(1)}}
+#toast{position:absolute;left:8%;right:8%;bottom:8%;display:none;text-align:center;padding:12px;border-radius:14px;background:var(--ink);color:var(--bg);font-size:clamp(1.1rem,4.5vw,1.6rem);font-weight:800;box-shadow:0 8px 24px rgba(0,0,0,.3);z-index:5}
+#toast.show{display:block;animation:tp .5s cubic-bezier(.2,1.6,.4,1)}
+@keyframes tp{from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:1}}
+.panel{margin-top:12px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.lives{display:flex;gap:8px}
+.life{width:34px;height:34px;border-radius:50%;background:var(--tile);display:grid;place-items:center;font-weight:800;color:var(--mute);border:2px solid var(--line)}
+.life.used{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.prompt{font-weight:700;text-align:center;font-size:.95rem;animation:blink 1.6s ease-in-out infinite}
+@keyframes blink{50%{color:var(--acc)}}
+.row{display:flex;gap:8px;width:100%;max-width:380px}
+input{flex:1;min-width:0;font-size:1.3rem;padding:10px;border-radius:12px;border:3px solid var(--ink);background:var(--bg);color:var(--ink);text-align:center;font-weight:700}
+input:focus{outline:none;border-color:var(--acc)}
+button{font:inherit;cursor:pointer}
+.go{padding:10px 20px;border:0;border-radius:12px;background:var(--acc);color:#fff;font-weight:800}
+.go:disabled{opacity:.4;cursor:not-allowed}
+.pad{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;width:100%;max-width:460px}
+@media(max-width:520px){.pad{grid-template-columns:repeat(6,1fr)}}
+.pad button{aspect-ratio:1;border:0;border-radius:10px;background:var(--tile);color:var(--ink);font-weight:800;font-size:.95rem;padding:0}
+.pad button:hover:not(:disabled){transform:translateY(-2px);background:var(--ink);color:var(--bg)}
+.pad button:disabled{cursor:not-allowed;color:#fff}
+.h1{background:#e11d48!important}.h2{background:#f97316!important}.h3{background:#d99a00!important}.h4{background:#7a9a10!important}.h5{background:#0d9488!important}.h6{background:#0ea5e9!important}.h7{background:#6366f1!important}.h8{background:#7c3aed!important}.h9{background:#64748b!important}.hw{background:#16a34a!important}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+h2{margin:0 0 8px;font-size:1rem}
+.code{background:var(--code);color:var(--codeink);border-radius:10px;padding:10px;font:.8rem/1.55 Consolas,"Courier New",monospace;max-height:280px;overflow:auto;white-space:pre-wrap}
+.code div{padding:0 6px;border-radius:5px}
+.code .on{background:var(--hl);color:#14122b;font-weight:700}
+.code .out{color:#7ee0a3}.code .err{color:#ff8aa0}.code .dim{opacity:.55}
+.log{margin-top:10px;display:flex;flex-direction:column;gap:5px;font-size:.88rem}
+.log span{background:var(--tile);border-radius:8px;padding:4px 10px}
+.msg{font-weight:800;text-align:center;min-height:1.2em}
+.again{display:none}
+.conf{position:fixed;top:-30px;font-size:1.6rem;pointer-events:none;animation:fall 2.6s linear forwards;z-index:40}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+/* start screen: commands pop up one by one */
+#start{position:fixed;inset:0;z-index:50;background:var(--bg);overflow:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:calc(20px + env(safe-area-inset-top,0px)) 16px 24px}
+#start.hide{display:none}
+#start h1{margin:0 0 4px;font-size:clamp(1.6rem,6vw,2.8rem);text-align:center;animation:tp .6s cubic-bezier(.2,1.6,.4,1)}
+.cmd{max-width:680px;width:100%;padding:14px 18px;border-radius:16px;color:#fff;font-weight:800;font-size:clamp(1rem,3.6vw,1.35rem);text-align:center;opacity:0;animation:tp .6s cubic-bezier(.2,1.6,.4,1) forwards;box-shadow:0 8px 22px rgba(0,0,0,.18)}
+#startbtn{opacity:0;animation:tp .6s cubic-bezier(.2,1.6,.4,1) 3.4s forwards,pulse 1.2s ease-in-out 4s infinite;font-size:1.3rem;padding:14px 34px}
+@keyframes pulse{50%{transform:scale(1.08)}}
+.bgn{position:fixed;font-weight:700;opacity:.18;z-index:-1;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="start">
+<h1>NUMBER GUESSING GAME</h1>
+<div id="cmds" style="display:contents"></div>
+<button class="go" id="startbtn">LET US PROCEED →</button>
+</div>
+<div class="wrap">
+<div class="grid">
+<div>
+<div class="stage" id="stage"><div id="q">?</div><div id="toast"></div></div>
+<div class="panel">
+<div class="lives" id="lives"></div>
+<div class="prompt" id="prompt"></div>
+<div class="row"><input id="inp" type="text" inputmode="numeric" autocomplete="off" placeholder="1 to 30"><button class="go" id="go">Guess</button></div>
+<div class="pad" id="pad"></div>
+<div class="msg" id="msg"></div>
+<button class="go again" id="again">PLAY AGAIN</button>
+</div>
+</div>
+<div class="card">
+<h2>Python code running, line by line</h2>
+<div class="code" id="code"></div>
+<div class="log" id="log"></div>
+</div>
+</div>
+</div>
+<script>
+// Same logic as the original Python program, ported line for line.
+var PROMPT = "Enter The Value You Are Guessing Computer has picked up :";
+var INTRO = ["Welcome To The Number Guessing Game Programme",
+"You Will Have 5 total attempts to guess a randomized number between 1 to 30 the computer have chosen",
+"According to your accuracy the programme itself will tell you whether you are close or far from that number",
+"So let us proceed Further"];
+var COL = ["#0a6cf0","#d99a00","#16a34a","#7a1bff","#9b1c1c","#e0561b","#5ee06a","#0fc5c5","#5a2d0c","#ff1f6e"];
+var MSG = {1:["More Closer","More Closer"],2:["Closer","Closer"],3:["Good one","Good one"],4:["OK not bad","Ok not bad"],5:["Nice try","Nice try"],6:["Far","Far"],7:["Too Far","Too Far"],8:["So Much Far","So Much Far"]};
+var a, n, over, tt;
+var $ = function(i){return document.getElementById(i)};
+function ord(i){return ["","1st","2nd","3rd","4th","5th"][i]}
+
+// number collage (like the reference picture)
+var NUMS = [[84,-6,-4,26],[86,40,2,15],[31,70,0,22],[23,2,28,28],[81,74,30,18],[6,60,44,14],[54,28,45,13],[83,-5,56,24],[14,32,62,18],[28,62,60,32],[47,48,24,9],[19,10,14,9],[72,84,50,10],[65,6,82,10]];
+NUMS.forEach(function(v,i){var e=document.createElement("div");e.className="n";e.textContent=v[0];e.style.left=v[1]+"%";e.style.top=v[2]+"%";e.style.fontSize=v[3]+"cqw";e.style.fontSize="calc("+v[3]+" * 4.6px)";e.style.color=COL[i%COL.length];e.style.animationDelay=(i*.35)+"s";$("stage").insertBefore(e,$("q"))});
+function fit(){var w=$("stage").clientWidth;[].forEach.call(document.querySelectorAll(".n"),function(e,i){e.style.fontSize=(NUMS[i][3]*w/100*1.0)+"px"})}
+window.addEventListener("resize",fit);fit();
+
+// intro commands pop on screen
+INTRO.forEach(function(t,i){var d=document.createElement("div");d.className="cmd";d.textContent=t;d.style.background=COL[[0,3,4,9][i]];d.style.animationDelay=(.5+i*.85)+"s";$("cmds").appendChild(d)});
+$("startbtn").onclick=function(){$("start").classList.add("hide");$("inp").focus()};
+
+function toast(lines){
+  var t=$("toast");t.innerHTML=lines.join("<br>");t.classList.remove("show");void t.offsetWidth;t.classList.add("show");
+  clearTimeout(tt);tt=setTimeout(function(){t.classList.remove("show")},over?9000:2600);
+}
+function start(){
+  a = Math.floor(Math.random()*30)+1; // random.randint(1 , 30)
+  n = 0; over = false;
+  $("msg").textContent = ""; $("log").innerHTML = ""; $("toast").classList.remove("show");
+  $("again").style.display = "none"; $("q").textContent = "?";
+  $("prompt").textContent = PROMPT;
+  $("code").innerHTML = '<div class="dim">import random</div><div class="dim">a = random.randint(1 , 30)</div><div class="dim">b = int(input("'+PROMPT+'"))</div>';
+  $("lives").innerHTML = [1,2,3,4,5].map(function(i){return '<div class="life" id="l'+i+'">'+i+'</div>'}).join("");
+  var pad = $("pad"); pad.innerHTML = "";
+  for(var i=1;i<=30;i++){var b=document.createElement("button");b.textContent=i;b.id="t"+i;b.onclick=(function(v){return function(){$("inp").value=v;$("inp").focus()}})(i);pad.appendChild(b)}
+  $("inp").value = ""; $("inp").disabled = false; $("go").disabled = false;
+}
+
+function evaluate(b, att){
+  var tr = [], out = [], r = {tr:tr,out:out,win:false,cls:"h9",end:false};
+  tr.push('b = int(input("'+PROMPT+'"))');
+  if(b > 30){ tr.push("if b > 30 :"); out.push("ERROR Number Cannot Be Greater Than 30 its"); }
+  tr.push("if b == a :");
+  if(att === 5){
+    if(b === a){ out.push("BOOYAH! you guessed it correct in Your FINAL ATTEMPT"); tr.push('    sys.exit("Wanna Have Fun Again ? , Then PLAY")'); r.win = true; r.end = true; r.cls = "hw"; return r; }
+    tr.push("else:"); out.push("Sorry! You Failed to Guess The Number "+a+" WANNA RETRY ??"); r.end = true; return r;
+  }
+  if(b === a){
+    out.push(att === 1 ? "BOOYAH! you guessed it correct in your 1st ATTEMPT" : "BOOYAH! you guessed it correct");
+    tr.push('    sys.exit("Wanna Have Fun Again ? , Then PLAY")'); r.win = true; r.end = true; r.cls = "hw"; return r;
+  }
+  for(var m = 1; m <= 8; m++){
+    var order = (m === 7) ? ["a - b","b - a"] : ["b - a","a - b"];
+    for(var j = 0; j < 2; j++){
+      var expr = order[j];
+      tr.push("elif "+expr+" == "+m+":");
+      var hit = (expr === "b - a") ? (b - a === m) : (a - b === m);
+      if(hit){ var txt = MSG[m][expr === "b - a" ? 0 : 1]; tr.push('    print("'+txt+'")'); out.push(txt); r.cls = "h"+m; return r; }
+    }
+  }
+  tr.push("else:"); tr.push('    print("Really Far")'); out.push("Really Far"); r.cls = "h9"; return r;
+}
+
+function guess(){
+  if(over) return;
+  var raw = $("inp").value;
+  if(!/^\s*[+-]?\d+\s*$/.test(raw)){
+    $("code").innerHTML = '<div>b = int(input("'+PROMPT+'"))</div><div class="err">ValueError: invalid literal for int() with base 10: '+JSON.stringify(raw).replace(/"/g,"'").replace(/</g,"&lt;")+'</div>';
+    $("msg").textContent = "The program crashed, just like Python would. Start again!";
+    finish(); return;
+  }
+  var b = parseInt(raw, 10);
+  n++;
+  var r = evaluate(b, n);
+  $("l"+n).classList.add("used");
+  var h = "";
+  r.tr.forEach(function(t){h += '<div class="on">'+t.replace(/</g,"&lt;")+"</div>"});
+  r.out.forEach(function(t){h += '<div class="out">&gt;&gt; '+t+"</div>"});
+  $("code").innerHTML = '<div class="dim"># '+ord(n).toUpperCase()+' ATTEMPT</div>'+h;
+  var tile = $("t"+b);
+  if(tile){ tile.disabled = true; tile.className = r.cls; }
+  var s = document.createElement("span"); s.textContent = ord(n)+" attempt: "+b+" \u2192 "+r.out.join(" | "); $("log").appendChild(s);
+  $("inp").value = ""; $("inp").focus();
+  var q = $("q"); q.classList.remove("shake","pop"); void q.offsetWidth; q.classList.add(r.win ? "pop" : "shake");
+  if(r.end){ $("q").textContent = a; over = true; }
+  toast(r.out);
+  if(r.win){ $("msg").textContent = "Wanna Have Fun Again ? , Then PLAY"; confetti(); }
+  else if(r.end){ $("msg").textContent = "The number was "+a+"."; }
+  if(r.end) finish();
+}
+function finish(){ over = true; $("inp").disabled = true; $("go").disabled = true; $("again").style.display = "inline-block"; }
+function confetti(){
+  var e = ["\ud83c\udf89","\u2728","\ud83c\udfaf","\ud83d\udd22","\ud83c\udf88"];
+  for(var i=0;i<36;i++){var s=document.createElement("span");s.className="conf";s.textContent=e[i%e.length];s.style.left=(Math.random()*100)+"vw";s.style.animationDelay=(Math.random()*.8)+"s";document.body.appendChild(s);setTimeout(function(x){x.remove()},3600,s)}
+}
+$("go").onclick = guess;
+$("inp").addEventListener("keydown", function(e){ if(e.key === "Enter") guess(); });
+$("again").onclick = function(){ start(); $("inp").focus(); };
+start();
+</script>
+</body>
+</html>
